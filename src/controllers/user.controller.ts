@@ -32,5 +32,27 @@ const createUser = catchAsync(
     res.status(201).json(newUser);
   }
 );
-
-export { getAllUser, createUser };
+const getOneUser = catchAsync(
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const { id } = req.params;
+    const manager = getManager();
+    const user = manager.findOne(User, { where: { id, active: true } });
+    if (!user) return next(new AppError("User Tidak Ditemukan", 400));
+    res.status(200).json(user);
+  }
+);
+const deleteUser = catchAsync(
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const { id } = req.params;
+    const manager = getManager();
+    const user = await manager.findOne(User, { where: { id, active: true } });
+    if (!user) return next(new AppError("User Tidak Ditemukan", 400));
+    if (user.role === "admin") {
+      const countAdmin = await manager.count(User, { where: { role: "admin", active: true } });
+      if (countAdmin < 2) return next(new AppError("Gagal Hapus Admin, Harus Selalu Ada Satu Admin Atau Lebih !", 400));
+    }
+    await manager.update(User, { where: { id } }, { active: false });
+    res.status(204).json(null);
+  }
+);
+export { getAllUser, createUser, getOneUser, deleteUser };
