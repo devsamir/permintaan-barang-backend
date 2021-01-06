@@ -37,10 +37,16 @@ const main = async (): Promise<void> => {
     if (process.env.NODE_ENV !== "production") {
       app.use(morgan("dev"));
     }
-    app.use(cors({ origin: "http://localhost:3020", credentials: true }));
+    app.use(
+      cors({
+        origin: "http://localhost:3000",
+        credentials: true,
+        allowedHeaders: ["Origin", "X-Requested-With", "Content-Type", "Accept"],
+      })
+    );
     app.use(helmet());
-    app.use(express.json());
     app.use(cookieParser());
+    app.use(express.json());
     //   ROUTE
     app.use("/api/v1/user", userRouter);
     app.use("/api/v1/auth", authRouter);

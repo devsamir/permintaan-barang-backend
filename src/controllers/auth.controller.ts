@@ -19,9 +19,9 @@ const login = catchAsync(
     if (!cekPass) return next(new AppError("Username atau Password Salah !", 400));
     const jwtSecret: any = process.env.JWT_SECRET;
     const token = await jwt.sign(user.id, jwtSecret);
-    res.cookie("jwt", token);
+    res.cookie("jwt", token, { httpOnly: true });
 
-    res.status(200).json({ username, role: user.role, id: user.id, name: user.name });
+    res.status(200).json({ user: { username, role: user.role, id: user.id, name: user.name }, isLogin: true });
   }
 );
 const cekJwt = catchAsync(
@@ -35,8 +35,9 @@ const cekJwt = catchAsync(
       res.clearCookie("jwt");
       return next(new AppError("Anda Belum Login", 401));
     }
-
-    res.status(200).json({ isLogin: true });
+    res
+      .status(200)
+      .json({ isLogin: true, user: { username: user.username, role: user.role, id: user.id, name: user.name } });
   }
 );
 const protect = catchAsync(
