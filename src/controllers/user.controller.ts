@@ -51,7 +51,7 @@ const deleteUser = catchAsync(
       const countAdmin = await manager.count(User, { where: { role: "admin", active: true } });
       if (countAdmin < 2) return next(new AppError("Gagal Hapus Admin, Harus Selalu Ada Satu Admin Atau Lebih !", 400));
     }
-    await manager.update(User, { where: { id } }, { active: false });
+    await manager.update(User, { id }, { active: false });
     res.status(204).json(null);
   }
 );

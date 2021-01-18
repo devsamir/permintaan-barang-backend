@@ -1,16 +1,6 @@
 import { IsDefined, MinLength } from "class-validator";
 import { Column, Entity, PrimaryColumn, Unique } from "typeorm";
 
-// enum Role {
-//   Ruangan = "ruangan",
-//   TimPenapisan = "timPenapisan",
-//   TimPengadaan = "timPengadaan",
-//   Atem = "atem",
-//   ManagerKeuangan = "managerKeuangan",
-//   ManagerPelayanan = "managerPelayanan",
-//   Admin = "admin",
-// }
-
 @Entity()
 @Unique("Nama", ["name", "role", "active"])
 export default class User {
@@ -29,9 +19,17 @@ export default class User {
   @MinLength(1, { message: "Nama Tidak Boleh Kosong !" })
   name: string;
   @Column("enum", {
-    enum: ["ruangan", "timPenapisan", "timPengadaan", "atem", "managerKeuangan", "managerPelayanan", "admin"],
+    enum: [
+      "ruangan",
+      "timPengadaanMedis",
+      "timPengadaanNonMedis",
+      "atem",
+      "managerKeuangan",
+      "managerPelayanan",
+      "admin",
+    ],
   })
-  @IsDefined()
+  @IsDefined({ message: "Role Tidak Boleh Kosong !" })
   role: string;
   @Column("boolean", { default: true, select: false })
   active: boolean;

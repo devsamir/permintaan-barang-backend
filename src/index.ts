@@ -10,11 +10,15 @@ import "reflect-metadata";
 // Own
 import errorHandler from "./utils/errorHandler";
 import User from "./entities/User";
+import Barang from "./entities/Barang";
+import DetailBarang from "./entities/DetailBarang";
+import TransaksiBarang from "./entities/TransaksiBarang";
 // ENTITIES
 dotenv.config();
 
 // Router
 import userRouter from "./routes/user.routes";
+import barangRouter from "./routes/barang.routes";
 import authRouter from "./routes/auth.routes";
 // Error Handler
 
@@ -28,7 +32,7 @@ const main = async (): Promise<void> => {
       database: process.env.DB_NAME,
       synchronize: true,
       logging: true,
-      entities: [User],
+      entities: [User, Barang, DetailBarang, TransaksiBarang],
     });
     console.log("Database Connected");
 
@@ -50,6 +54,7 @@ const main = async (): Promise<void> => {
     //   ROUTE
     app.use("/api/v1/user", userRouter);
     app.use("/api/v1/auth", authRouter);
+    app.use("/api/v1/barang", barangRouter);
 
     app.use(errorHandler);
     const port = process.env.PORT;

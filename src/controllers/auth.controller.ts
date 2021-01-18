@@ -63,15 +63,15 @@ const logout = catchAsync(
     res.status(200).json({ isLogin: false });
   }
 );
-const restrictTo = (...roles: string[]) => {
-  return async (req: Request | any, res: Response, next: NextFunction): Promise<void> => {
-    if (roles.includes(req.user.role)) {
-      console.log(roles, req.user.role);
+// const restrictTo = (...roles: string[]) => {
+//   return async (req: Request | any, res: Response, next: NextFunction): Promise<void> => {
+//     if (roles.includes(req.user.role)) {
+//       console.log(roles, req.user.role);
 
-      next();
-    } else {
-      next(new AppError("Anda Tidak Berhak Melakukan Operasi Ini", 400));
-    }
-  };
-};
-export { login, cekJwt, protect, logout, restrictTo };
+//       next();
+//     } else {
+//       next(new AppError("Anda Tidak Berhak Melakukan Operasi Ini", 400));
+//     }
+//   };
+// };
+export { login, cekJwt, protect, logout };
