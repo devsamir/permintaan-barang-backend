@@ -36,21 +36,24 @@ export const getAllBarang = catchAsync(
     const { page, limit, search, sort }: any = req.query;
     const manager = getManager();
     let query = "";
+    let queryCount = "";
     if (search) {
-      const fields = ["namaBarang", "jenisBarang", "qty", "keterangan"];
+      const fields = ["namaBarang", "jenisBarang"];
       const searchQuery = fields.map((item) => `${item} like '%${search}%'`).join(" or ");
       query += ` and (${searchQuery})`;
+      queryCount += ` and (${searchQuery})`;
+    }
+    if (sort) {
+      query += ` order by ${sort.split("_")[0]} ${sort.split("_")[1]} `;
     }
     if (page && limit) {
       const take = page * limit;
       const skip = (page - 1) * limit;
       query += ` limit ${take} offset ${skip}`;
     }
-    if (sort) {
-      query += ` order by ${sort.split("_")[0]} ${sort.split("_")[1]} `;
-    }
     const barang = await manager.query(`select * from barang where 1 ${query}`);
-    res.status(200).json(barang);
+    const count = await manager.query(`select count(*) as result from barang where 1 ${queryCount}`);
+    res.status(200).json({ data: barang, result: count[0].result });
   }
 );
 export const createBarang = catchAsync(
