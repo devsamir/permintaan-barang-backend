@@ -20,6 +20,7 @@ dotenv.config();
 import userRouter from "./routes/user.routes";
 import barangRouter from "./routes/barang.routes";
 import authRouter from "./routes/auth.routes";
+import { Application } from "express";
 // Error Handler
 
 const main = async (): Promise<void> => {
@@ -36,7 +37,7 @@ const main = async (): Promise<void> => {
     });
     console.log("Database Connected");
 
-    const app = express();
+    const app: Application = express();
 
     if (process.env.NODE_ENV !== "production") {
       app.use(morgan("dev"));
@@ -51,6 +52,7 @@ const main = async (): Promise<void> => {
     app.use(helmet());
     app.use(cookieParser());
     app.use(express.json());
+    app.use("/uploads", express.static("uploads"));
     //   ROUTE
     app.use("/api/v1/user", userRouter);
     app.use("/api/v1/auth", authRouter);

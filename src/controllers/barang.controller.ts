@@ -15,19 +15,12 @@ const multerStorage = multer.diskStorage({
   },
   filename: (req, file, cb) => {
     const ext = file.originalname.split(".")[1];
-    if (ext.toLowerCase() === "jpg" || ext.toLowerCase() === "png") {
-      cb(null, `barang-${new Date().getTime()}-${v4()}.${ext}`);
-    }
+    cb(null, `barang-${new Date().getTime()}-${v4()}.${ext}`);
   },
 } as DiskStorageOptions);
 
 const multerFilter = (req: Request, file: Express.Multer.File, cb: FileFilterCallback) => {
-  const ext = file.originalname.split(".")[1];
-  if (ext.toLowerCase().startsWith("jpg") || ext.toLowerCase().startsWith("png")) {
-    cb(null, true);
-  } else {
-    cb(null, false);
-  }
+  cb(null, true);
 };
 const upload = multer({ storage: multerStorage, fileFilter: multerFilter });
 export const uploadImageBarang = upload.single("image");
@@ -53,9 +46,11 @@ export const getAllBarang = catchAsync(
     }
     const barang = await manager.query(`select * from barang where 1 ${query}`);
     const count = await manager.query(`select count(*) as result from barang where 1 ${queryCount}`);
+    barang.forEach((item: any) => (item.active = undefined));
     res.status(200).json({ data: barang, result: count[0].result });
   }
 );
+
 export const createBarang = catchAsync(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const body = req.body;
