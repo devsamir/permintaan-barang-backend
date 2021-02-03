@@ -1,3 +1,4 @@
+import fs from "fs";
 import { Request, Response, NextFunction } from "express";
 import { getManager } from "typeorm";
 import { validate } from "class-validator";
@@ -31,7 +32,7 @@ export const getAllBarang = catchAsync(
     let query = "";
     let queryCount = "";
     if (search) {
-      const fields = ["namaBarang", "jenisBarang"];
+      const fields = ["namaBarang"];
       const searchQuery = fields.map((item) => `${item} like '%${search}%'`).join(" or ");
       query += ` and (${searchQuery})`;
       queryCount += ` and (${searchQuery})`;
@@ -44,9 +45,13 @@ export const getAllBarang = catchAsync(
       const skip = (page - 1) * limit;
       query += ` limit ${take} offset ${skip}`;
     }
-    const barang = await manager.query(`select * from barang where 1 ${query}`);
-    const count = await manager.query(`select count(*) as result from barang where 1 ${queryCount}`);
-    barang.forEach((item: any) => (item.active = undefined));
+    const barang = await manager.query(`select * from barang where active=true ${query}`);
+    const count = await manager.query(`select count(*) as result from barang where active=true ${queryCount}`);
+    barang.forEach((item: any) => {
+      item.active = undefined;
+      if (item.jenisBarang === "medis") item.jenisBarang = "Barang Medis";
+      if (item.jenisBarang === "nonMedis") item.jenisBarang = "Barang Non Medis";
+    });
     res.status(200).json({ data: barang, result: count[0].result });
   }
 );
@@ -62,5 +67,36 @@ export const createBarang = catchAsync(
     if (errors.length > 0) return formError(errors, res);
     await manager.save(newBarang);
     res.status(201).json(newBarang);
+  }
+);
+export const updateBarang = catchAsync(
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const body = req.body;
+    const { id } = req.params;
+    const manager = getManager();
+
+    const barang = await manager.findOne(Barang, { where: { id } });
+    if (!barang) return next(new AppError("Barang Dengan ID yang diberikan Tidak Ditemukan !", 400));
+    fs.unlinkSync(barang.fotoBarang);
+    let path = barang.fotoBarang;
+    if (req.file) path = req.file.path;
+    const updatedBarang = manager.create(Barang, { ...body, id, fotoBarang: path });
+    const errors = await validate(updatedBarang);
+    if (errors.length > 0) return formError(errors, res);
+    await manager.save(updatedBarang);
+    res.status(200).json(updatedBarang);
+  }
+);
+
+export const deleteBarang = catchAsync(
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const { barang } = req.body;
+    const manager = getManager();
+    await Promise.all(
+      barang.map((id: string) => {
+        return manager.update(Barang, { id }, { active: false });
+      })
+    );
+    res.status(204).json(null);
   }
 );
