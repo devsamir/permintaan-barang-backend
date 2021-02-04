@@ -13,6 +13,7 @@ import User from "./entities/User";
 import Barang from "./entities/Barang";
 import DetailBarang from "./entities/DetailBarang";
 import TransaksiBarang from "./entities/TransaksiBarang";
+import AutoId from "./entities/AutoId";
 // ENTITIES
 dotenv.config();
 
@@ -33,7 +34,7 @@ const main = async (): Promise<void> => {
       database: process.env.DB_NAME,
       synchronize: true,
       logging: true,
-      entities: [User, Barang, DetailBarang, TransaksiBarang],
+      entities: [User, Barang, DetailBarang, TransaksiBarang, AutoId],
     });
     console.log("Database Connected");
 
