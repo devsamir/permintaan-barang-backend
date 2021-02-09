@@ -36,7 +36,7 @@ const getOneUser = catchAsync(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const { id } = req.params;
     const manager = getManager();
-    const user = manager.findOne(User, { where: { id, active: true } });
+    const user = await manager.findOne(User, { where: { id, active: true } });
     if (!user) return next(new AppError("User Tidak Ditemukan", 400));
     res.status(200).json(user);
   }

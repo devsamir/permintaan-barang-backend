@@ -4,7 +4,7 @@ import Barang from "./Barang";
 import User from "./User";
 
 @Entity({ name: "detail_barang" })
-@Unique("kodeBarang", ["kodeBarang", "active"])
+@Unique("kodeBarang", ["kodeBarang", "status", "active"])
 export default class DetailBarang {
   @PrimaryColumn()
   @IsDefined()
@@ -19,7 +19,7 @@ export default class DetailBarang {
   @Column("enum", { enum: ["aktif", "tidak aktif"] })
   @IsDefined({ message: "Status Barang Tidak Boleh Kosong !" })
   @MinLength(1, { message: "Status Barang Tidak Boleh Kosong !" })
-  status: string;
+  status: "aktif" | "tidak aktif";
 
   @Column({ length: "7" })
   @IsDefined({ message: "Kode Barang Tidal Boleh Kosong !" })

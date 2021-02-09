@@ -18,7 +18,7 @@ export default class TransaksiBarang {
   user: string;
   @Column("enum", { enum: ["masuk", "pindah", "keluar"] })
   @IsDefined({ message: "Status Transaksi Tidak Boleh Kosong" })
-  status: string;
+  status: "masuk" | "pindah" | "keluar";
   @Column("text", { nullable: true })
   keterangan: string;
 }

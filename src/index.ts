@@ -1,5 +1,6 @@
 const express = require("express");
 // import express from "express";
+import { Request, Response } from "express";
 import dotenv from "dotenv";
 import { createConnection } from "typeorm";
 import cors from "cors";
@@ -21,6 +22,7 @@ dotenv.config();
 import userRouter from "./routes/user.routes";
 import barangRouter from "./routes/barang.routes";
 import authRouter from "./routes/auth.routes";
+import inventarisRouter from "./routes/inventaris.routes";
 import { Application } from "express";
 // Error Handler
 
@@ -58,8 +60,17 @@ const main = async (): Promise<void> => {
     app.use("/api/v1/user", userRouter);
     app.use("/api/v1/auth", authRouter);
     app.use("/api/v1/barang", barangRouter);
+    app.use("/api/v1/inventaris", inventarisRouter);
 
     app.use(errorHandler);
+
+    app.use("*", (req: Request, res: Response) => {
+      res.status(404).json({
+        status: "error",
+        message: "End Point Tidak Ditemukan !",
+      });
+    });
+
     const port = process.env.PORT;
 
     app.listen(port, () => {

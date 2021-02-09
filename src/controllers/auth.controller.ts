@@ -18,7 +18,7 @@ const login = catchAsync(
     const cekPass = await bcrypt.compare(password, user.password);
     if (!cekPass) return next(new AppError("Username atau Password Salah !", 400));
     const jwtSecret: any = process.env.JWT_SECRET;
-    const token = await jwt.sign(user.id, jwtSecret);
+    const token = await jwt.sign(user.id, jwtSecret, { expiresIn: "1 days" });
     res.cookie("jwt", token, { httpOnly: true });
 
     res.status(200).json({ user: { username, role: user.role, id: user.id, name: user.name }, isLogin: true });
