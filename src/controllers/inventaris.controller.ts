@@ -53,12 +53,11 @@ export const getInventBarang = catchAsync(
     const manager = getManager();
     const { type, id } = req.body;
     if (type === "ruang") {
-      const barangInventarisReq = await manager.find(DetailBarang, {
-        where: { user: id, active: true, status: "aktif" },
-      });
-      barangInventarisReq.map(async (item: DetailBarang) => {
-        const barang = await manager.findOne(Barang, { where: { id: item.barang } });
-      });
+      // const barangInventarisReq = await manager.find(DetailBarang, {
+      //   where: { user: id, active: true, status: "aktif" },
+      //   relations:[]
+      // });
+      manager.query("select ");
     } else if (type === "barang") {
     }
   }
