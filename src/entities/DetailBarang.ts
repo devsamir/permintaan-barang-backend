@@ -1,4 +1,4 @@
-import { IsDefined, MinLength } from "class-validator";
+import { IsDate, IsDefined, MinLength } from "class-validator";
 import { Column, Entity, ManyToOne, PrimaryColumn, Unique } from "typeorm";
 import Barang from "./Barang";
 import User from "./User";
@@ -22,12 +22,13 @@ export default class DetailBarang {
   status: "aktif" | "tidak aktif";
 
   @Column({ length: "7" })
-  @IsDefined({ message: "Kode Barang Tidal Boleh Kosong !" })
-  @MinLength(1, { message: "Kode Barang Tidal Boleh Kosong !" })
+  @IsDefined({ message: "Kode Barang Tidak Boleh Kosong !" })
+  @MinLength(7, { message: "Kode Barang Harus Memiliki Panjang 7 Karakter" })
   kodeBarang: string;
   @Column({ type: "date" })
   @IsDefined({ message: "Tanggal Barang Mulai Dipakai Harus Diisi !" })
-  tanggalBarang: string;
+  @IsDate({ message: "Format Tanggal Salah !" })
+  tanggalBarang: Date;
   @Column("boolean", { default: true, select: false })
   active: boolean;
 }

@@ -18,7 +18,7 @@ const login = catchAsync(
     const cekPass = await bcrypt.compare(password, user.password);
     if (!cekPass) return next(new AppError("Username atau Password Salah !", 400));
     const jwtSecret: any = process.env.JWT_SECRET;
-    const token = await jwt.sign(user.id, jwtSecret, { expiresIn: "1 days" });
+    const token = await jwt.sign({ id: user.id }, jwtSecret, { expiresIn: "1d" });
     res.cookie("jwt", token, { httpOnly: true });
 
     res.status(200).json({ user: { username, role: user.role, id: user.id, name: user.name }, isLogin: true });
@@ -29,8 +29,8 @@ const cekJwt = catchAsync(
     const manager = getManager();
     const jwtSecret: any = process.env.JWT_SECRET;
     if (!req.cookies.jwt) return next(new AppError("Anda Belum Login", 401));
-    const id = await jwt.verify(req.cookies.jwt, jwtSecret);
-    const user = await manager.findOne(User, { where: { id, active: true } });
+    const token: any = await jwt.verify(req.cookies.jwt, jwtSecret);
+    const user = await manager.findOne(User, { where: { id: token.id, active: true } });
     if (!user) {
       res.clearCookie("jwt");
       return next(new AppError("Anda Belum Login", 401));
@@ -45,8 +45,8 @@ const protect = catchAsync(
     const manager = getManager();
     const jwtSecret: any = process.env.JWT_SECRET;
     if (!req.cookies.jwt) return next(new AppError("Anda Belum Login", 401));
-    const id = await jwt.verify(req.cookies.jwt, jwtSecret);
-    const user: any = await manager.findOne(User, { where: { id, active: true } });
+    const token: any = await jwt.verify(req.cookies.jwt, jwtSecret);
+    const user: any = await manager.findOne(User, { where: { id: token.id, active: true } });
     if (!user) {
       res.clearCookie("jwt");
       return next(new AppError("Anda Belum Login", 401));
