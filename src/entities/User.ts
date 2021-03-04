@@ -28,6 +28,7 @@ export default class User {
       "managerKeuangan",
       "managerPelayanan",
       "admin",
+      "inventaris",
     ],
   })
   @IsDefined({ message: "Role Tidak Boleh Kosong !" })

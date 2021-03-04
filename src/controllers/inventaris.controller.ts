@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from "express";
+import { Request, Response, NextFunction, query } from "express";
 import { getManager } from "typeorm";
 import { validate } from "class-validator";
 import { v4 } from "uuid";
@@ -28,8 +28,15 @@ export const createInventBarang = catchAsync(
     if (!(body.kodeBarang.toLowerCase().startsWith("u") || body.kodeBarang.toLowerCase().startsWith("m")))
       return next(new AppError("Format Kode Barang Tidak Valid !", 400));
     const kodeInventaris = v4();
+    console.log(body);
+
     const newBarang = manager.create(DetailBarang, {
-      ...body,
+      barangId: body.barang,
+      hargaBeli: body.hargaBeli,
+      kodeBarang: body.kodeBarang,
+      userId: body.user,
+      barang: body.barang,
+      user: body.user,
       id: kodeInventaris,
       status: "aktif",
       tanggalBarang: new Date(body.tanggal),
@@ -48,18 +55,83 @@ export const createInventBarang = catchAsync(
     res.status(200).json({ barang: newBarang, transaksi: newTransaksi });
   }
 );
-export const getInventBarang = catchAsync(
+export const getTotalBarang = catchAsync(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const manager = getManager();
-    const { type, id } = req.body;
-    if (type === "ruang") {
-      // const barangInventarisReq = await manager.find(DetailBarang, {
-      //   where: { user: id, active: true, status: "aktif" },
-      //   relations:[]
-      // });
-      manager.query("select ");
-    } else if (type === "barang") {
+    const { id, page, search } = req.query;
+
+    const cekId = await manager.findOne(User, { where: { id, active: true, role: "ruangan" } });
+    if (cekId) {
+      let query = `select b.namaBarang,b.jenisBarang,b.fotoBarang,b.keterangan,b.id,count(d.id) as qty from barang b,detail_barang d where d.barangId = b.id and d.userId = '${id}' and status = 'aktif' and d.active = true`;
+      let queryCount = `select count(distinct(b.id)) as result from barang b,detail_barang d where d.barangId = b.id and d.userId = '${id}' and status = 'aktif' and d.active = true`;
+      if (search) {
+        const fields = ["b.namaBarang", "b.jenisBarang", "b.keterangan"];
+        const searchQuery = fields.map((item) => `${item} like '%${search}%'`).join(" or ");
+        query += ` and (${searchQuery})`;
+        queryCount += ` and (${searchQuery})`;
+      }
+      query += " group by b.id";
+      if (page) {
+        const skip = (Number(page) - 1) * 12;
+        query += ` limit 12 offset ${skip}`;
+      }
+      const data = await manager.query(query);
+      const [{ result }] = await manager.query(queryCount);
+      res.status(200).json({ data, result });
+    } else {
+      let query = `select b.namaBarang,b.jenisBarang,b.fotoBarang,b.keterangan,b.id,count(d.id) as qty from barang b,detail_barang d where d.barangId = b.id and status = 'aktif' and d.active = true`;
+      let queryCount = `select count(distinct(b.id)) as result from barang b,detail_barang d where d.barangId = b.id and status = 'aktif' and d.active = true`;
+      if (search) {
+        const fields = ["b.namaBarang", "b.jenisBarang", "b.keterangan"];
+        const searchQuery = fields.map((item) => `${item} like '%${search}%'`).join(" or ");
+        query += ` and (${searchQuery})`;
+        queryCount += ` and (${searchQuery})`;
+      }
+      query += " group by b.id";
+      if (page) {
+        const skip = (Number(page) - 1) * 12;
+        query += ` limit 12 offset ${skip}`;
+      }
+      const data = await manager.query(query);
+      const [{ result }] = await manager.query(queryCount);
+
+      res.status(200).json({ data, result });
     }
+  }
+);
+export const getDetailTotalBarang = catchAsync(
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const { barang } = req.params;
+    const { page, limit, search, sort }: any = req.query;
+    const manager = getManager();
+    let query = `select d.id,d.kodeBarang,d.tanggalBarang,b.namaBarang,u.name,d.hargaBeli from detail_barang d,barang b,user u where d.barangId = b.id and d.userId = u.id and d.barangId = '${barang}' and d.status='aktif' and d.active = true`;
+    let queryCount = `select count(d.id) as result from detail_barang d,barang b,user u where d.barangId = b.id and d.userId = u.id and d.barangId = '${barang}' and d.status='aktif' and d.active = true`;
+    if (search) {
+      const fields = ["d.kodeBarang", "b.namaBarang", "b.jenisBarang", "u.name", "d.hargaBeli"];
+      const searchQuery = fields.map((item) => `${item} like '%${search}%'`).join(" or ");
+      query += ` and (${searchQuery})`;
+      queryCount += ` and (${searchQuery})`;
+    }
+    if (sort) {
+      query += ` order by ${sort.split("_")[0]} ${sort.split("_")[1]} `;
+    }
+    if (page && limit) {
+      const take = page * limit;
+      const skip = (page - 1) * limit;
+      query += ` limit ${take} offset ${skip}`;
+    }
+    const reqOneBarang = manager.findOne(Barang, { where: { id: barang } });
+    const reqBarang = manager.query(query);
+    const reqResult = manager.query(queryCount);
+    const [barangData, [{ result }], oneBarang] = await Promise.all([reqBarang, reqResult, reqOneBarang]);
+    res.status(200).json({ data: barangData, result, barang: oneBarang });
+  }
+);
+export const getAllRuangan = catchAsync(
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const manager = getManager();
+    const ruangan = await manager.find(User, { where: { active: true, role: "ruangan" } });
+    res.status(200).json(ruangan);
   }
 );
 export const generateKodeBarang = catchAsync(
@@ -71,12 +143,14 @@ export const generateKodeBarang = catchAsync(
     while (regen) {
       const id = await manager.findOne(AutoId, { where: { namaId: jenis } });
       if (!id) return next(new AppError("Auto ID Tidak Ditemukan, Hubungi Developer !", 400));
+      const cekKode = jenis === "medis" ? `M${generate5Digit(id.noId)}` : `U${generate5Digit(id.noId)}`;
       const cekBarang = await manager.findOne(DetailBarang, {
-        where: { kodeBarang: id.noId, status: "aktif", active: true },
+        where: { kodeBarang: cekKode, status: "aktif", active: true },
       });
+
       if (!cekBarang) {
-        if (jenis === "medis") kodeBarang = `m${generate5Digit(id.noId)}`;
-        if (jenis === "nonMedis") kodeBarang = `u${generate5Digit(id.noId)}`;
+        if (jenis === "medis") kodeBarang = `M${generate5Digit(id.noId)}`;
+        if (jenis === "nonMedis") kodeBarang = `U${generate5Digit(id.noId)}`;
 
         regen = false;
       } else {
@@ -95,5 +169,86 @@ export const checkKodeBarang = catchAsync(
     res.status(200).json({
       available: true,
     });
+  }
+);
+export const deleteDetailBarang = catchAsync(
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const manager = getManager();
+    const { barangs } = req.body;
+    await Promise.all(
+      barangs.map(async (id: string) => {
+        await manager.update(DetailBarang, { id }, { active: false });
+        return true;
+      })
+    );
+    res.status(204).json(null);
+  }
+);
+
+export const nonaktifkanBarang = catchAsync(
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const manager = getManager();
+    const { id } = req.params;
+    const { tanggal, keterangan } = req.body;
+    const barang = await manager.findOne(DetailBarang, {
+      where: { id },
+    });
+    if (!barang) return next(new AppError("Barang Dengan ID yang Diberikan Tidak Ditemukan !", 400));
+    console.log(barang);
+
+    const newTransaksi = manager.create(TransaksiBarang, {
+      barang: barang.id,
+      keterangan,
+      status: "keluar",
+      tanggal: new Date(tanggal),
+      user: barang.userId,
+    });
+    const errors = await validate(newTransaksi);
+    if (errors.length > 0) return formError(errors, res);
+    await manager.update(DetailBarang, { id }, { status: "tidak aktif" });
+    await manager.save(newTransaksi);
+
+    res.status(204).json(null);
+  }
+);
+
+export const pindahBarang = catchAsync(
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const manager = getManager();
+    const { id } = req.params;
+    const { tanggal, keterangan, user } = req.body;
+    const barang = await manager.findOne(DetailBarang, { where: { id } });
+    if (!barang) return next(new AppError("Barang Dengan ID yang Diberikan Tidak Ditemukan !", 400));
+    barang.user = user;
+
+    const newTransaksi = manager.create(TransaksiBarang, {
+      barang: barang.id,
+      keterangan,
+      status: "pindah",
+      tanggal: new Date(tanggal),
+      user,
+    });
+    const errors = await validate(newTransaksi);
+    if (errors.length > 0) return formError(errors, res);
+
+    await manager.save(barang);
+    await manager.save(newTransaksi);
+    res.status(200).json(barang);
+  }
+);
+export const riwayatBarang = catchAsync(
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const manager = getManager();
+    const { id } = req.params;
+    const reqBarang = manager.query(
+      "select b.id as barang,b.namaBarang,b.jenisBarang,b.keterangan,b.fotoBarang,d.id,u.name,d.kodeBarang,d.tanggalBarang,d.hargaBeli from barang b,detail_barang d,user u where d.userId = u.id and d.barangId = b.id and d.id = ?",
+      [id]
+    );
+    const reqTransaksi = manager.query(
+      "select t.id,t.tanggal,t.status,t.keterangan,u.name from transaksi_barang t,user u where t.userId = u.id and t.barangId = ?",
+      [id]
+    );
+    const [[barang], transaksi] = await Promise.all([reqBarang, reqTransaksi]);
+    res.status(200).json({ barang, transaksi });
   }
 );

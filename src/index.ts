@@ -47,7 +47,7 @@ const main = async (): Promise<void> => {
     }
     app.use(
       cors({
-        origin: "http://localhost:3000",
+        origin: "http://192.168.100.221:3000",
         credentials: true,
         allowedHeaders: ["Origin", "X-Requested-With", "Content-Type", "Accept"],
       })

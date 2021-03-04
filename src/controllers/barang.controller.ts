@@ -77,10 +77,12 @@ export const updateBarang = catchAsync(
 
     const barang = await manager.findOne(Barang, { where: { id } });
     if (!barang) return next(new AppError("Barang Dengan ID yang diberikan Tidak Ditemukan !", 400));
-    try {
-      fs.unlinkSync(barang.fotoBarang);
-    } catch (e) {
-      console.log(e);
+    if (req.file) {
+      try {
+        fs.unlinkSync(barang.fotoBarang);
+      } catch (e) {
+        console.log(e);
+      }
     }
     let path = barang.fotoBarang;
     if (req.file) path = req.file.path;
